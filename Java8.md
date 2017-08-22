@@ -2,7 +2,7 @@
 
 [官方文档](http://www.oracle.com/technetwork/java/javase/8-whats-new-2157071.html)
 
-## Lambda 表达式
+## Lambda 表达式 (Lambda Expression )
 
 Lambda允许把函数作为一个方法的参数（函数作为参数传递进方法中）。
 
@@ -34,9 +34,9 @@ Notice:
 
 lambda 表达式只能引用 final 或 final 局部变量，这就是说不能在 lambda 内部修改定义在域外的变量，否则会编译错误。
 
-## 方法引用
+## 方法引用 (Method References)
 
-方法引用提供了非常有用的语法，可以直接引用已有Java类或对象（实例）的方法或构造器。与lambda联合使用，方法引用可以使语言的构造更紧凑简洁，减少冗余代码。
+适用场景：当一个Lambda表达式调用了一个已存在的方法
 
 - 构造器引用：它的语法是Class::new，或者更一般的Class< T >::new
 - 静态方法引用：它的语法是Class::static_method
@@ -46,12 +46,32 @@ lambda 表达式只能引用 final 或 final 局部变量，这就是说不能�
 For example:
 
 ```
-// Old way
-System.out.println("Balala");
+// 使用Lambda表达式
+(a, b) -> {return a * b};
 
-// Java8
-System.out::println("Balala");
+// 使用Lambda表达式，调用已存在的方法
+(a, b) -> Calculator.calculate(a, b);
+
+// 使用方法引用
+Calculator::calculate;
 ```
+
+[一个完整的例子](https://my.oschina.net/luoyezhuifeng/blog/801343) ([原文链接](https://docs.oracle.com/javase/tutorial/java/javaOO/methodreferences.html))
+
+不适用：当需要往引用的方法传其它参数的时候，如下示例：
+
+```
+IsReferable demo = () -> ReferenceDemo.commonMethod("Argument in method.");
+```
+
+In other words:
+
+>*Instead of using*
+>**AN ANONYMOUS CLASS**
+>*you can use*
+>**A LAMBDA EXPRESSION**
+>*And if this just calls one method, you can use*
+>**A METHOD REFERENCE**
 
 ## 函数式接口（Functional Interface）
 
@@ -124,7 +144,7 @@ Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式�
 - 和以前的Collection操作不同， Stream操作还有两个基础的特征：
     - **Pipelining**: 中间操作都会返回流对象本身。 这样多个操作可以串联成一个管道， 如同流式风格（fluent style）。 这样做可以对操作进行优化， 比如延迟执行(laziness)和短路( short-circuiting)。
     - **内部迭代**： 以前对集合遍历都是通过Iterator或者For-Each的方式, 显式的在集合外部进行迭代， 这叫做外部迭代。 Stream提供了内部迭代的方式， 通过访问者模式(Visitor)实现。
-    
+
 ### stream() − 为集合创建串行流
 
 - 参照[菜鸟教程](http://www.runoob.com/java/java8-streams.html)
@@ -174,3 +194,11 @@ Base64工具类提供了一套静态方法获取下面三种BASE64编解码器�
 - URL：输出映射到一组字符A-Za-z0-9+_，输出是URL和文件。
 - MIME：输出隐射到MIME友好格式。输出每行不超过76字符，并且使用'\r'并跟随'\n'作为分割。编码输出最后没有行分割。
 
+
+
+
+
+
+> * Refer:
+> * <http://www.runoob.com/java/java8-new-features.html>
+> * [Java 8 Method Reference: How to Use it](https://www.codementor.io/eh3rrera/using-java-8-method-reference-du10866vx)
