@@ -201,4 +201,5 @@ Base64工具类提供了一套静态方法获取下面三种BASE64编解码器�
 
 > * Refer:
 > * <http://www.runoob.com/java/java8-new-features.html>
+> * [[深入浅出 Java 8 Lambda 表达式](http://blog.oneapm.com/apm-tech/226.html)]
 > * [Java 8 Method Reference: How to Use it](https://www.codementor.io/eh3rrera/using-java-8-method-reference-du10866vx)
