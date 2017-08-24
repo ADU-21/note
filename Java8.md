@@ -162,7 +162,7 @@ public class Test {
 
 `ClassA` 类并没有实现 `InterfaceA` 接口中的 `foo` 方法，`InterfaceA` 接口中提供了 `foo` 方法的默认实现，因此可以直接调用 `ClassA` 类的 `foo` 方法。
 
-关于继承：
+关于继承，参照 [Java 8 默认方法和多继承](http://colobu.com/2014/11/04/Java-8-default-method-and-multiple-inheritance/)：
 
 - 和其它方法一样，接口默认方法也可以被继承。
 
@@ -188,27 +188,102 @@ public class Test {
 
 ## Stream API
 
-Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式来提供一种对 Java 集合运算和表达的高阶抽象。
+### 什么是 Stream
 
-- Stream（流）是一个来自数据源的元素队列并支持聚合操作
-    - 元素是特定类型的对象，形成一个队列。 Java中的Stream并不会存储元素，而是按需计算。
-    - **数据源** 流的来源。 可以是集合，数组，I/O channel， 产生器generator 等。
-    - **聚合操作** 类似SQL语句一样的操作， 比如filter, map, reduce, find, match, sorted等。
-- 和以前的Collection操作不同， Stream操作还有两个基础的特征：
-    - **Pipelining**: 中间操作都会返回流对象本身。 这样多个操作可以串联成一个管道， 如同流式风格（fluent style）。 这样做可以对操作进行优化， 比如延迟执行(laziness)和短路( short-circuiting)。
-    - **内部迭代**： 以前对集合遍历都是通过Iterator或者For-Each的方式, 显式的在集合外部进行迭代， 这叫做外部迭代。 Stream提供了内部迭代的方式， 通过访问者模式(Visitor)实现。
+Stream 不是集合元素，它不是数据结构并不保存数据，它是有关算法和计算的，它更像一个高级版本的迭代器(Iterator)，单向，不可往复，数据只能遍历一次，遍历过一次后即用尽了，就好比流水从面前流过，一去不复返。而和迭代器又不同的是，Stream 可以并行化操作，且数据源本身可以是无限的。
 
-### stream() − 为集合创建串行流
+## Stream 的构成
 
-- 参照[菜鸟教程](http://www.runoob.com/java/java8-streams.html)
+当我们使用一个流的时候，通常包括三个基本步骤：
 
-### parallelStream() − 为集合创建并行流。
+获取一个数据源（source）→ 数据转换→执行操作获取想要的结果。
 
-**存在争议，好好看看**
+#### Stream 的构造与转换
+
+##### 构造流的几种常见方法
+
+```
+// 1. Individual values
+Stream stream = Stream.of("a", "b", "c");
+// 2. Arrays
+String [] strArray = new String[] {"a", "b", "c"};
+stream = Stream.of(strArray);
+stream = Arrays.stream(strArray);
+// 3. Collections
+List<String> list = Arrays.asList(strArray);
+stream = list.stream();
+```
+
+需要注意的是，对于基本数值型，目前有三种对应的包装类型 Stream：IntStream、LongStream、DoubleStream。当然我们也可以用 Stream<Integer>、Stream<Long> >、Stream<Double>，但是 boxing 和 unboxing 会很耗时，所以特别为这三种基本数值型提供了对应的 Stream。
+
+Java 8 中还没有提供其它数值型 Stream，因为这将导致扩增的内容较多。而常规的数值型聚合运算可以通过上面三种 Stream 进行。
+
+##### 数值流的构造
+
+```
+IntStream.of(new int[]{1, 2, 3}).forEach(System.out::println);
+IntStream.range(1, 3).forEach(System.out::println);
+IntStream.rangeClosed(1, 3).forEach(System.out::println);
+```
+
+##### 流转换为其它数据结构
+
+```
+// 1. Array
+String[] strArray1 = stream.toArray(String[]::new);
+// 2. Collection
+List<String> list1 = stream.collect(Collectors.toList());
+List<String> list2 = stream.collect(Collectors.toCollection(ArrayList::new));
+Set set1 = stream.collect(Collectors.toSet());
+Stack stack1 = stream.collect(Collectors.toCollection(Stack::new));
+// 3. String
+String str = stream.collect(Collectors.joining()).toString();
+```
+
+流的操作类型分为三种：
+
+- **Intermediate**：一个流可以后面跟随零个或多个 intermediate 操作。其目的主要是打开流，做出某种程度的数据映射/过滤，然后返回一个新的流，交给下一个操作使用。这类操作都是惰性化的（lazy），就是说，仅仅调用到这类方法，并没有真正开始流的遍历。
+
+  包括：map (mapToInt, flatMap 等)、 filter、 distinct、 sorted、 peek、 limit、 skip、 parallel、 sequential、 unordered
+
+
+- **Terminal**：一个流只能有一个 terminal 操作，当这个操作执行后，流就被使用“光”了，无法再被操作。所以这必定是流的最后一个操作。Terminal 操作的执行，才会真正开始流的遍历，并且会生成一个结果，或者一个 side effect。
+
+  包括：forEach、 forEachOrdered、 toArray、 reduce、 collect、 min、 max、 count、 anyMatch、 allMatch、 noneMatch、 findFirst、 findAny、 iterator
+
+- 还有一种操作被称为 **short-circuiting**。用以指：
+
+  - 对于一个 intermediate 操作，如果它接受的是一个无限大（infinite/unbounded）的 Stream，但返回一个有限的新 Stream。
+  - 对于一个 terminal 操作，如果它接受的是一个无限大的 Stream，但能在有限的时间计算出结果。
+
+  包括：anyMatch、 allMatch、 noneMatch、 findFirst、 findAny、 limit
+
+### 注意
+
+> * Stream 不是数据结构
+> * 所有 Stream 的操作必须以 lambda 表达式为参数
+> * 不支持索引访问，你可以请求第一个元素，但无法请求第二个，第三个，或最后一个。
+> * 很多 Stream 操作是向后延迟的，一直到它弄清楚了最后需要多少数据才会开始。
+> * 可以是无限的，limit(n) 和 findFirst() 这类的 short-circuiting 操作可以对无限的 Stream 进行运算并很快完成。
+> * 调用`paralle()`构造并行stream
+
+Some examples: [Java 8 Stream Tutorial Examples](http://winterbe.com/posts/2014/07/31/java8-stream-tutorial-examples/)
+
+**Think Twice Before Using Java 8 Parallel Streams**
+
+小心使用 Stream 的并行功能，Parallel Stream 采用的是 jdk7 中引入的 ForkJoin框架， 使用**分治法(Divide-and-Conquer Algorithm)**管理线程池，这种方案在进程阻塞的情况下会导致事倍功半的效果，相比串行方案还会浪费一些计算资源。具体可参见这篇文章：[深入浅出parallelStream](http://www.jianshu.com/p/bd825cb89e00)
+
+## 重复注解
+
+## 更好的类型推断
+
+## 拓宽注解的应用场景
+
+
 
 ## 新工具
 
-新的编译工具，如：Nashorn引擎 jjs、 类依赖分析器jdeps。
+新的编译工具，如：Nashorn JavaScript引擎 jjs、 类依赖分析器jdeps。具体参见：[官方文档](http://docs.oracle.com/javase/8/docs/technotes/tools/enhancements-8.html)
 
 ## Date Time API （了解）
 
@@ -237,7 +312,7 @@ Java 8 在 java.time 包下提供了很多新的 API。以下为两个比较重�
 Nashorn 一个 javascript 引擎。
 从JDK 1.8开始，Nashorn取代Rhino(JDK 1.6, JDK1.7)成为Java的嵌入式JavaScript引擎。Nashorn完全支持ECMAScript 5.1规范以及一些扩展。它使用基于JSR 292的新语言特性，其中包含在JDK 7中引入的 invokedynamic，将JavaScript编译成Java字节码。
 
-## Base64 (看看)
+## Base64 
 
 在Java 8中，Base64编码已经成为Java类库的标准。
 Java 8 内置了 Base64 编码的编码器和解码器。
@@ -254,9 +329,11 @@ Base64工具类提供了一套静态方法获取下面三种BASE64编解码器�
 
 > * Refer:
 > * <http://www.runoob.com/java/java8-new-features.html>
-> * [[深入浅出 Java 8 Lambda 表达式](http://blog.oneapm.com/apm-tech/226.html)]
+> * [深入浅出 Java 8 Lambda 表达式](http://blog.oneapm.com/apm-tech/226.html)
 > * [Java 8 Method Reference: How to Use it](https://www.codementor.io/eh3rrera/using-java-8-method-reference-du10866vx)
 > * <http://colobu.com/2014/10/28/secrets-of-java-8-functional-interface/>
 > * <http://blog.csdn.net/zxhoo/article/details/38349011>
 > * <http://ebnbin.com/2015/12/20/java-8-default-methods/>
-> * [Java 8 默认方法和多继承](http://colobu.com/2014/11/04/Java-8-default-method-and-multiple-inheritance/)
+> * <https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/>
+> * <https://nkcoder.github.io/2016/01/24/java-8-stream-api/>
+> * http://www.jianshu.com/p/5b800057f2d8
