@@ -2,6 +2,8 @@
 
 [官方文档](http://www.oracle.com/technetwork/java/javase/8-whats-new-2157071.html)
 
+# [Java Programming Language](http://docs.oracle.com/javase/8/docs/technotes/guides/language/enhancements.html#javase8)
+
 ## Lambda 表达式 (Lambda Expression )
 
 Lambda允许把函数作为一个方法的参数（函数作为参数传递进方法中）。
@@ -186,6 +188,59 @@ public class Test {
 
 - 当接口继承行为发生冲突时的另一个规则是，**类的方法声明优先于接口默认方法，无论该方法是具体的还是抽象的**。
 
+## 重复注解（Repeating Annotations）
+
+自从Java 5中引入[注解](http://www.javacodegeeks.com/2012/08/java-annotations-explored-explained.html)以来，这个特性开始变得非常流行，并在各个框架和项目中被广泛使用。不过，注解有一个很大的限制是：在同一个地方不能多次使用同一个注解。Java 8打破了这个限制，引入了重复注解的概念，允许在同一个地方多次使用同一个注解。
+
+具体参见：[这里](https://my.oschina.net/benhaile/blog/180932)
+
+## 类型注解（Type Annotations）
+
+在java 8之前，注解只能是在声明的地方所使用，比如类，方法，属性；java 8里面，注解可以应用在任何地方，比如：
+
+```
+// 创建类实例
+new @Interned MyObject();
+
+// 类型映射       
+myString = (@NonNull String) str;
+
+// implements 语句中        
+class UnmodifiableList<T> implements @Readonly List<@Readonly T> { ... }
+
+// throw exception声明        
+void monitorTemperature() throws @Critical TemperatureException { ... }
+
+```
+
+需要注意的是，类型注解只是语法而不是语义，并不会影响java的编译时间，加载时间，以及运行时间，也就是说，编译成class文件的时候并不包含类型注解。
+
+类型注解的作用，参见：[Java 8新特性探究（四）类型注解 复杂还是便捷](https://my.oschina.net/benhaile/blog/179642)
+
+## 加强泛型的目标类型推断
+
+java8里面泛型的目标类型推断主要2个：
+
+1.支持通过方法上下文推断泛型目标类型
+
+2.支持在方法调用链路当中，泛型类型推断传递到最后一个方法
+
+举个栗子：
+
+下面的例子在java 7无法正确编译（但现在在java8里面可以编译，因为根据方法参数来自动推断泛型的类型）：
+
+```
+List<String> list = new ArrayList<>();
+list.add("A");// 由于addAll期望获得Collection<? extends String>类型的参数，因此下面的语句无法通过
+list.addAll(new ArrayList<>());
+```
+
+具体参见： [Java 8新特性探究（六）泛型的目标类型推断](https://my.oschina.net/benhaile/blog/184390)
+
+# [Collections](http://docs.oracle.com/javase/8/docs/technotes/guides/collections/changes8.html)
+
+Classes in the new `java.util.stream` package provide a Stream API to support functional-style operations on streams of elements. The Stream API is integrated into the Collections API, which enables bulk operations on collections, such as sequential or parallel map-reduce transformations.
+
 ## Stream API
 
 ### 什么是 Stream
@@ -273,46 +328,81 @@ Some examples: [Java 8 Stream Tutorial Examples](http://winterbe.com/posts/2014/
 
 小心使用 Stream 的并行功能，Parallel Stream 采用的是 jdk7 中引入的 ForkJoin框架， 使用**分治法(Divide-and-Conquer Algorithm)**管理线程池，这种方案在进程阻塞的情况下会导致事倍功半的效果，相比串行方案还会浪费一些计算资源。具体可参见这篇文章：[深入浅出parallelStream](http://www.jianshu.com/p/bd825cb89e00)
 
-## 重复注解
-
-## 更好的类型推断
-
-## 拓宽注解的应用场景
-
-
-
-## 新工具
-
-新的编译工具，如：Nashorn JavaScript引擎 jjs、 类依赖分析器jdeps。具体参见：[官方文档](http://docs.oracle.com/javase/8/docs/technotes/tools/enhancements-8.html)
-
-## Date Time API （了解）
+# [Date-Time Package](http://docs.oracle.com/javase/8/docs/technotes/guides/datetime/index.html) 
 
 Java 8通过发布新的Date-Time API (JSR 310)来进一步加强对日期与时间的处理。
-在旧版的 Java 中，日期时间 API 存在诸多问题，其中有：
+在旧版的 Java 中，日期时间 API 存在诸多问题，第三方包又些许存在一些兼容性问题，Java 8 在 java.time 包下提供了很多新的 API，包含以下相应的包：
 
-- 非线程安全 − java.util.Date 是非线程安全的，所有的日期类都是可变的，这是Java日期类最大的问题之一。
-- 设计很差 − Java的日期/时间类的定义并不一致，在java.util和java.sql的包中都有日期类，此外用于格式化和解析的类在java.text包中定义。java.util.Date同时包含日期和时间，而java.sql.Date仅包含日期，将其纳入java.sql包并不合理。另外这两个类都有相同的名字，这本身就是一个非常糟糕的设计。
-- 时区处理麻烦 − 日期类并不提供国际化，没有时区支持，因此Java引入了java.util.Calendar和java.util.TimeZone类，但他们同样存在上述所有的问题。
+- java.time包：这是新的Java日期/时间API的基础包，所有的主要基础类都是这个包的一部分，如：LocalDate, LocalTime, LocalDateTime, Instant, Period, Duration等等。所有这些类都是不可变的和线程安全的，在绝大多数情况下，这些类能够有效地处理一些公共的需求。
+- java.time.chrono包：这个包为非ISO的日历系统定义了一些泛化的API，我们可以扩展AbstractChronology类来创建自己的日历系统。
+- java.time.format包：这个包包含能够格式化和解析日期时间对象的类，在绝大多数情况下，我们不应该直接使用它们，因为java.time包中相应的类已经提供了格式化和解析的方法。
+- java.time.temporal包：这个包包含一些时态对象，我们可以用其找出关于日期/时间对象的某个特定日期或时间，比如说，可以找到某月的第一天或最后一天。你可以非常容易地认出这些方法，因为它们都具有“withXXX”的格式。
+- java.time.zone包：这个包包含支持不同时区以及相关规则的类。
 
-Java 8 在 java.time 包下提供了很多新的 API。以下为两个比较重要的 API：
+# Optional 类 — 优雅的空指针处理
 
-- Local(本地) − 简化了日期时间的处理，没有时区的问题。
-- Zoned(时区) − 通过制定的时区处理日期时间。
+身为一名Java程序员，大家可能都有这样的经历：调用一个方法得到了返回值却不能直接将返回值作为参数去调用别的方法。我们首先要判断这个返回值是否为null，只有在非空的前提下才能将其作为其他方法的参数。这正是一些类似[Guava](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/base/Optional.html)的外部API试图解决的问题。一些JVM编程语言比如Scala、Ceylon等已经将对在核心API中解决了这个问题。新版本的Java，比如[Java 8](http://blog.sanaulla.info/tag/java-8/)引入了一个新的[Optional](http://download.java.net/jdk8/docs/api/java/util/Optional.html)类。Optional类的Javadoc描述如下：
 
-新的java.time包涵盖了所有处理日期，时间，日期/时间，时区，时刻（instants），过程（during）与时钟（clock）的操作。
+>这是一个可以为null的容器对象。如果值存在则isPresent()方法会返回true，调用get()方法会返回该对象。
 
-## Optional 类 
+Optional 类提供了许多方法用于解决空指针的问题，下面列举几个个我认为最常用的方法，完整版可参见这篇文章：[Java 8 Optional类深度解析](http://www.importnew.com/6675.html)
 
-- Optional 类是一个可以为null的容器对象。如果值存在则isPresent()方法会返回true，调用get()方法会返回该对象。
-- Optional 是个容器：它可以保存类型T的值，或者仅仅保存null。Optional提供很多有用的方法，这样我们就不用显式进行空值检测。
-- Optional 类的引入很好的解决空指针异常。
+- **ifPresent**
 
-## Nashorn JavaScript 引擎
+  如果Optional实例有值则为其调用consumer，否则不做处理，For example:
 
-Nashorn 一个 javascript 引擎。
-从JDK 1.8开始，Nashorn取代Rhino(JDK 1.6, JDK1.7)成为Java的嵌入式JavaScript引擎。Nashorn完全支持ECMAScript 5.1规范以及一些扩展。它使用基于JSR 292的新语言特性，其中包含在JDK 7中引入的 invokedynamic，将JavaScript编译成Java字节码。
+  ```
+  //ifPresent方法接受lambda表达式作为参数。
+  //lambda表达式对Optional的值调用consumer进行处理。
+  name.ifPresent((value) -> {
+    System.out.println("The length of the value is: " + value.length());
+  });
+  ```
 
-## Base64 
+- **orElse**
+
+  如果Optional实例有值则将其返回，否则返回orElse方法传入的参数，For example：
+
+  ```
+  //如果值不为null，orElse方法返回Optional实例的值。
+  //如果为null，返回传入的消息。
+  //输出：There is no value present!
+  System.out.println(empty.orElse("There is no value present!"));
+  //输出：Sanaulla
+  System.out.println(name.orElse("There is some value!"));
+  ```
+
+- **orElseGet**
+
+  orElseGet与orElse方法类似，区别在于得到的默认值。orElse方法将传入的字符串作为默认值，orElseGet方法可以接受[Supplier接口](http://blog.sanaulla.info/2013/04/02/supplier-interface-in-java-util-function-package-in-java-8/)的实现用来生成默认值，For example：
+
+  ```
+  //orElseGet与orElse方法类似，区别在于orElse传入的是默认值，
+  //orElseGet可以接受一个lambda表达式生成默认值。
+  //输出：Default Value
+  System.out.println(empty.orElseGet(() -> "Default Value"));
+  //输出：Sanaulla
+  System.out.println(name.orElseGet(() -> "Default Value"));
+  ```
+
+- **map**
+
+  如果有值，则对其执行调用mapping函数得到返回值。如果返回值不为null，则创建包含mapping返回值的Optional作为map方法返回值，否则返回空Optional，For example：
+
+  ```
+  //map方法执行传入的lambda表达式参数对Optional实例的值进行修改。
+  //为lambda表达式的返回值创建新的Optional实例作为map方法的返回值。
+  Optional<String> upperName = name.map((value) -> value.toUpperCase());
+  System.out.println(upperName.orElse("No value found"));
+  ```
+
+# [Security](http://docs.oracle.com/javase/8/docs/technotes/guides/security/enhancements-8.html)
+
+# [HotSpot JVM](http://docs.oracle.com/javase/8/docs/technotes/guides/vm/)
+
+
+
+# Base64 
 
 在Java 8中，Base64编码已经成为Java类库的标准。
 Java 8 内置了 Base64 编码的编码器和解码器。
@@ -323,11 +413,28 @@ Base64工具类提供了一套静态方法获取下面三种BASE64编解码器�
 - MIME：输出隐射到MIME友好格式。输出每行不超过76字符，并且使用'\r'并跟随'\n'作为分割。编码输出最后没有行分割。
 
 
+# [JavaFX](http://docs.oracle.com/javase/8/javase-clienttechnologies.htm)
+
+JavaFX主要致力于富客户端开发，以弥补swing的缺陷，主要提供图形库与media库，支持audio,video,graphics,animation,3D等，同时采用现代化的css方式支持界面设计。
+
+具体可参见：[Java 8新特性探究（十三）JavaFX 8新特性以及开发2048游戏](https://my.oschina.net/benhaile/blog/335109)
+
+# 新工具
+
+新的编译工具，如：Nashorn JavaScript引擎 jjs、 类依赖分析器jdeps。具体参见：[官方文档](http://docs.oracle.com/javase/8/docs/technotes/tools/enhancements-8.html)
+
+## Nashorn JavaScript 引擎
+
+Nashorn 一个 javascript 引擎。
+从JDK 1.8开始，Nashorn取代Rhino(JDK 1.6, JDK1.7)成为Java的嵌入式JavaScript引擎。Nashorn完全支持ECMAScript 5.1规范以及一些扩展。它使用基于JSR 292的新语言特性，其中包含在JDK 7中引入的 invokedynamic，将JavaScript编译成Java字节码。
+
+更多参见：[Java 8新特性探究（十二）Nashorn ：新犀牛](https://my.oschina.net/benhaile/blog/290276)
 
 
 
-
-> * Refer:
+> Refer:
+>
+> * [成熟的毛毛虫：Java8](https://my.oschina.net/benhaile/blog?sort=time&catalog=410404&p=2&temp=1503637545998)
 > * <http://www.runoob.com/java/java8-new-features.html>
 > * [深入浅出 Java 8 Lambda 表达式](http://blog.oneapm.com/apm-tech/226.html)
 > * [Java 8 Method Reference: How to Use it](https://www.codementor.io/eh3rrera/using-java-8-method-reference-du10866vx)
@@ -337,3 +444,5 @@ Base64工具类提供了一套静态方法获取下面三种BASE64编解码器�
 > * <https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/>
 > * <https://nkcoder.github.io/2016/01/24/java-8-stream-api/>
 > * http://www.jianshu.com/p/5b800057f2d8
+> * <http://www.importnew.com/14140.html>
+> * <http://brianway.github.io/2017/03/29/javase-java8/>
