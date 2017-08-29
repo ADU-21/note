@@ -8,9 +8,9 @@
 
 Lambda允许把函数作为一个方法的参数（函数作为参数传递进方法中）。
 
-Like this: ```input -> body ```
+形如: ```input -> body ```
 
-More like this:
+在代码中:
 
 ```
 (arg1, arg2...) -> { body }
@@ -18,7 +18,7 @@ More like this:
 (type1 arg1, type2 arg2...) -> { body }
 ```
 
-For example：
+示例如下：
 
 ```
 () -> 42
@@ -32,7 +32,7 @@ a -> return a*a
 (String s) -> { System.out.println(s); }
 ```
 
-Notice:
+注意:
 
 lambda 表达式只能引用 final 或 final 局部变量，这就是说不能在 lambda 内部修改定义在域外的变量，否则会编译错误。
 
@@ -66,7 +66,7 @@ Calculator::calculate;
 IsReferable demo = () -> ReferenceDemo.commonMethod("Argument in method.");
 ```
 
-In other words:
+换句话说，
 
 >*Instead of using*
 >**AN ANONYMOUS CLASS**
@@ -79,59 +79,9 @@ In other words:
 
 FI的定义其实很简单：任何接口，如果只包含**唯一**一个抽象方法，那么它就是一个FI。为了让编译器帮助我们确保一个接口满足FI的要求（也就是说有且仅有一个抽象方法，这种类型的接口也称为SAM接口，即Single Abstract Method interfaces）
 
-Java8提供了@FunctionalInterface注解，Java 不会强制要求你使用@FunctionalInterface注解来标记你的接口是函数式接口， 然而，作为API作者， 你可能倾向使用@FunctionalInterface指明特定的接口为函数式接口， 这只是一个设计上的考虑， 可以让用户很明显的知道一个接口是函数式接口。
+Java8提供了@FunctionalInterface注解，Java 不会强制要求你使用@FunctionalInterface注解来标记你的接口是函数式接口， 然而，作为API作者， 你可能倾向使用@FunctionalInterface指明特定的接口为函数式接口， 这只是一个设计上的考虑， 可以让用户很明显的知道一个接口是函数式接口。除此之外，FI 还可以很容易被 Lambda 实现。
 
-```
-java.util.function
-```
-
-For example: java.util.function.Predicate 
-
-Predicate <T> 接口是一个函数式接口，它接受一个输入参数 T，返回一个布尔值结果。
-
-```
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Predicate;
- 
-public class Java8Tester {
-   public static void main(String args[]){
-      List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9);
-        
-      // Predicate<Integer> predicate = n -> true
-      // n 是一个参数传递到 Predicate 接口的 test 方法
-      // n 如果存在则 test 方法返回 true
-        
-      System.out.println("输出所有数据:");
-        
-      // 传递参数 n
-      eval(list, n->true);
-        
-      // Predicate<Integer> predicate1 = n -> n%2 == 0
-      // n 是一个参数传递到 Predicate 接口的 test 方法
-      // 如果 n%2 为 0 test 方法返回 true
-        
-      System.out.println("输出所有偶数:");
-      eval(list, n-> n%2 == 0 );
-        
-      // Predicate<Integer> predicate2 = n -> n > 3
-      // n 是一个参数传递到 Predicate 接口的 test 方法
-      // 如果 n 大于 3 test 方法返回 true
-        
-      System.out.println("输出大于 3 的所有数字:");
-      eval(list, n-> n > 3 );
-   }
-    
-   public static void eval(List<Integer> list, Predicate<Integer> predicate) {
-      for(Integer n: list) {
-        
-         if(predicate.test(n)) {
-            System.out.println(n + " ");
-         }
-      }
-   }
-}
-```
+具体例子参见： [Java 8 函数式接口](http://www.runoob.com/java/java8-functional-interfaces.html)
 
 ## 默认方法（Default Methods）
 
@@ -164,29 +114,27 @@ public class Test {
 
 `ClassA` 类并没有实现 `InterfaceA` 接口中的 `foo` 方法，`InterfaceA` 接口中提供了 `foo` 方法的默认实现，因此可以直接调用 `ClassA` 类的 `foo` 方法。
 
-关于继承，参照 [Java 8 默认方法和多继承](http://colobu.com/2014/11/04/Java-8-default-method-and-multiple-inheritance/)：
+和其它方法一样，接口默认方法也可以被继承，这样一来接口就面临了多继承问题，如下图所示，Interface C 继承了 Interface A 和 B，如果 A 和 B 中存在相同的签名方法，C 就要处理继承冲突的问题。
 
-- 和其它方法一样，接口默认方法也可以被继承。
+```
++---------------+         +------------+
+|  Interface A  |         |Interface B |
++-----------^---+         +---^--------+
+            |                 |         
+            |                 |         
+            |                 |         
+            +-+------------+--+         
+              | Interface C|            
+              +------------+
+```
 
-- Java 使用的是单继承、多实现的机制，为的是避免多继承带来的调用歧义的问题。当接口的子类同时拥有具有相同签名的方法时，就需要考虑一种解决冲突的方案。Java 接口方法名发生冲突时，分为三种情况：
+接口多继承冲突分为以下三种情况：
 
-  ```
-  +---------------+         +------------+
-  |  Interface A  |         |Interface B |
-  +-----------^---+         +---^--------+
-              |                 |         
-              |                 |         
-              |                 |         
-              +-+------------+--+         
-                | Interface C|            
-                +------------+
-  ```
+- A,B拥有相同签名的默认方法如果接口C没有override这个方法， 则编译出错。这种情况需要在子接口`C`中覆盖override这个方法，并可以使用 `InterfaceName.super.methodName();` 的方式手动调用需要的接口默认方法。（注意方法签名不包括方法的返回值， 也就是仅仅返回值不同的两个方法的签名也是相同的）
+- `A`和`B`的默认方法（传入参数）不同， C隐式继承了两个默认方法，不会有冲突。
+- 但是有的情况下即使是不同签名的方法也是很难分辨的，比如传入类型为```short``` 和 ```int```，Java会选择最适合的方法， 请参看 [Java规范 15.12.2.5](http://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.12.2.5)
 
-  - A,B拥有相同签名的默认方法如果接口C没有override这个方法， 则编译出错。这种情况需要在子接口`C`中覆盖override这个方法，并可以使用 `InterfaceName.super.methodName();` 的方式手动调用需要的接口默认方法。（注意方法签名不包括方法的返回值， 也就是仅仅返回值不同的两个方法的签名也是相同的）
-  - `A`和`B`的默认方法不同， C隐式继承了两个默认方法，不会有冲突。
-  - 但是有的情况下即使是不同签名的方法也是很难分辨的，比如传入类型为```short``` 和 ```int```，Java会选择最适合的方法， 请参看 [Java规范 15.12.2.5](http://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.12.2.5)
-
-- 当接口继承行为发生冲突时的另一个规则是，**类的方法声明优先于接口默认方法，无论该方法是具体的还是抽象的**。
+更多多继承问题，参见： [Java 8 默认方法和多继承](http://colobu.com/2014/11/04/Java-8-default-method-and-multiple-inheritance/)
 
 ## 重复注解（Repeating Annotations）
 
@@ -210,7 +158,6 @@ class UnmodifiableList<T> implements @Readonly List<@Readonly T> { ... }
 
 // throw exception声明        
 void monitorTemperature() throws @Critical TemperatureException { ... }
-
 ```
 
 需要注意的是，类型注解只是语法而不是语义，并不会影响java的编译时间，加载时间，以及运行时间，也就是说，编译成class文件的时候并不包含类型注解。
@@ -225,7 +172,7 @@ java8里面泛型的目标类型推断主要2个：
 
 2.支持在方法调用链路当中，泛型类型推断传递到最后一个方法
 
-举个栗子：
+举个例子：
 
 下面的例子在java 7无法正确编译（但现在在java8里面可以编译，因为根据方法参数来自动推断泛型的类型）：
 
@@ -396,11 +343,15 @@ Optional 类提供了许多方法用于解决空指针的问题，下面列举�
   System.out.println(upperName.orElse("No value found"));
   ```
 
-# [Security](http://docs.oracle.com/javase/8/docs/technotes/guides/security/enhancements-8.html)
-
 # [HotSpot JVM](http://docs.oracle.com/javase/8/docs/technotes/guides/vm/)
 
+JVM 为了方便内存回收将堆内存分为**新生代（Young generation）**， **老年代（Old generation）**， **持久代（ permanent generation ）**（如下图所示）具体参考：[成为JavaGC专家（1）—深入浅出Java垃圾回收机制](http://www.importnew.com/1993.html)
 
+![](http://www.importnew.com/wp-content/uploads/2012/12/Figure-1-GC-Area-Data-Flow.png)
+
+Java8 移除了 Permanent Generation，取而代之的是一个叫 MetaSpace（元空间） 的内存空间（如下图所示），MetaSpace 使用的是本地内存（Native heap），带来的最大好处是不会再有  [java.lang.OutOfMemoryError: PermGen](http://javaeesupportpatterns.blogspot.com/2011/02/outofmemoryerror-permgen-patterns-part1.html) 的问题，MetaSpace 回根据使用情况自动扩容，其理论最大值即为操作系统所能提供的内存最大值；另外 MetaSpace 的 GC 扫描只会发生在 MetaSpace 达到 MaxMetaspaceSize 设置的上限的时候，减少 GC 扫描次数在一定程度上优化了 JVM 的性能。具体参照：[Java 8: From PermGen to Metaspace](https://dzone.com/articles/java-8-permgen-metaspace)
+
+![](http://static.oschina.net/uploads/space/2014/0329/195605_gspc_1028150.png)
 
 # Base64 
 
@@ -429,6 +380,10 @@ Nashorn 一个 javascript 引擎。
 从JDK 1.8开始，Nashorn取代Rhino(JDK 1.6, JDK1.7)成为Java的嵌入式JavaScript引擎。Nashorn完全支持ECMAScript 5.1规范以及一些扩展。它使用基于JSR 292的新语言特性，其中包含在JDK 7中引入的 invokedynamic，将JavaScript编译成Java字节码。
 
 更多参见：[Java 8新特性探究（十二）Nashorn ：新犀牛](https://my.oschina.net/benhaile/blog/290276)
+
+# [Security](http://docs.oracle.com/javase/8/docs/technotes/guides/security/enhancements-8.html)
+
+众多安全性上的提提升，如更好的 TSL/SSL 支持，改进加密算法等等，具体参见[官方文档](https://docs.oracle.com/javase/8/docs/technotes/guides/security/enhancements-8.html)
 
 
 
