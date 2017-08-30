@@ -81,7 +81,7 @@ FI的定义其实很简单：任何接口，如果只包含**唯一**一个抽�
 
 Java8提供了@FunctionalInterface注解，Java 不会强制要求你使用@FunctionalInterface注解来标记你的接口是函数式接口， 然而，作为API作者， 你可能倾向使用@FunctionalInterface指明特定的接口为函数式接口， 这只是一个设计上的考虑， 可以让用户很明显的知道一个接口是函数式接口。除此之外，FI 还可以很容易被 Lambda 实现。
 
-具体例子参见： [Java 8 函数式接口](http://www.runoob.com/java/java8-functional-interfaces.html)
+具体例子参见： [Java 8 函数式接口](http://www.runoob.com/java/java8-functional-interfaces.html); [Java 8 预览之Functional Interface](http://zyzhang.github.io/blog/2013/06/15/java8-preview-functional-interface/)
 
 ## 默认方法（Default Methods）
 
@@ -89,7 +89,7 @@ Java8提供了@FunctionalInterface注解，Java 不会强制要求你使用@Func
 
 >默认方法允许您添加新的功能到现有库的接口中，并能确保与采用旧版本接口编写的代码的二进制兼容性。
 
-当类实现接口的时候，类要实现接口中所有的方法。否则，类必须声明为抽象的类。默认方法就是接口可以有实现方法，而且不需要实现类去实现其方法。
+当类实现接口的时候，类要实现接口中所有的方法。否则，类必须声明为抽象的类。默认方法就是接口可以有实现方法，而且不需要实现类去实现其方法。也就是说，即使你的API已经发布出去了，你依然可以为接口添加新方法并且无需考虑向后兼容问题。
 
 默认方法是在接口中的方法签名前加上了 `default` 关键字的实现方法。
 
@@ -190,19 +190,23 @@ Classes in the new `java.util.stream` package provide a Stream API to support fu
 
 ## Stream API
 
+参考：[Java 8 中的 Streams API 详解](https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/)
+
 ### 什么是 Stream
 
 Stream 不是集合元素，它不是数据结构并不保存数据，它是有关算法和计算的，它更像一个高级版本的迭代器(Iterator)，单向，不可往复，数据只能遍历一次，遍历过一次后即用尽了，就好比流水从面前流过，一去不复返。而和迭代器又不同的是，Stream 可以并行化操作，且数据源本身可以是无限的。
 
-## Stream 的构成
+## Stream 的生命周期
 
 当我们使用一个流的时候，通常包括三个基本步骤：
 
 获取一个数据源（source）→ 数据转换→执行操作获取想要的结果。
 
-#### Stream 的构造与转换
+![](https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/img001.png)
 
-##### 构造流的几种常见方法
+### Stream 的构造
+
+#### 构造流的几种常见方法
 
 ```
 // 1. Individual values
@@ -216,11 +220,11 @@ List<String> list = Arrays.asList(strArray);
 stream = list.stream();
 ```
 
-需要注意的是，对于基本数值型，目前有三种对应的包装类型 Stream：IntStream、LongStream、DoubleStream。当然我们也可以用 Stream<Integer>、Stream<Long> >、Stream<Double>，但是 boxing 和 unboxing 会很耗时，所以特别为这三种基本数值型提供了对应的 Stream。
+需要注意的是，对于基本数值型，目前有三种对应的包装类型 Stream：IntStream、LongStream、DoubleStream。当然我们也可以用 Stream<Integer>、Stream<Long >、Stream<Double>，但是 boxing 和 unboxing 会很耗时，所以特别为这三种基本数值型提供了对应的 Stream。
 
 Java 8 中还没有提供其它数值型 Stream，因为这将导致扩增的内容较多。而常规的数值型聚合运算可以通过上面三种 Stream 进行。
 
-##### 数值流的构造
+#### 数值流的构造
 
 ```
 IntStream.of(new int[]{1, 2, 3}).forEach(System.out::println);
@@ -228,21 +232,9 @@ IntStream.range(1, 3).forEach(System.out::println);
 IntStream.rangeClosed(1, 3).forEach(System.out::println);
 ```
 
-##### 流转换为其它数据结构
+### Stream 的转换
 
-```
-// 1. Array
-String[] strArray1 = stream.toArray(String[]::new);
-// 2. Collection
-List<String> list1 = stream.collect(Collectors.toList());
-List<String> list2 = stream.collect(Collectors.toCollection(ArrayList::new));
-Set set1 = stream.collect(Collectors.toSet());
-Stack stack1 = stream.collect(Collectors.toCollection(Stack::new));
-// 3. String
-String str = stream.collect(Collectors.joining()).toString();
-```
-
-流的操作类型分为三种：
+Stream 的转换分为以下三种操作类型：
 
 - **Intermediate**：一个流可以后面跟随零个或多个 intermediate 操作。其目的主要是打开流，做出某种程度的数据映射/过滤，然后返回一个新的流，交给下一个操作使用。这类操作都是惰性化的（lazy），就是说，仅仅调用到这类方法，并没有真正开始流的遍历。
 
@@ -260,6 +252,22 @@ String str = stream.collect(Collectors.joining()).toString();
 
   包括：anyMatch、 allMatch、 noneMatch、 findFirst、 findAny、 limit
 
+### Stream 的消费
+
+流转换为其它数据结构：
+
+```
+// 1. Array
+String[] strArray1 = stream.toArray(String[]::new);
+// 2. Collection
+List<String> list1 = stream.collect(Collectors.toList());
+List<String> list2 = stream.collect(Collectors.toCollection(ArrayList::new));
+Set set1 = stream.collect(Collectors.toSet());
+Stack stack1 = stream.collect(Collectors.toCollection(Stack::new));
+// 3. String
+String str = stream.collect(Collectors.joining()).toString();
+```
+
 ### 注意
 
 > * Stream 不是数据结构
@@ -271,9 +279,13 @@ String str = stream.collect(Collectors.joining()).toString();
 
 Some examples: [Java 8 Stream Tutorial Examples](http://winterbe.com/posts/2014/07/31/java8-stream-tutorial-examples/)
 
+## Parallel Stream
+
 **Think Twice Before Using Java 8 Parallel Streams**
 
-小心使用 Stream 的并行功能，Parallel Stream 采用的是 jdk7 中引入的 ForkJoin框架， 使用**分治法(Divide-and-Conquer Algorithm)**管理线程池，这种方案在进程阻塞的情况下会导致事倍功半的效果，相比串行方案还会浪费一些计算资源。具体可参见这篇文章：[深入浅出parallelStream](http://www.jianshu.com/p/bd825cb89e00)
+Stream 的并行功能适用于计算密集且运行在多核操作系统上的应用，而非 IO 密集型。因为Parallel Stream 采用的是 jdk7 中引入的 ForkJoin框架， 使用**分治法(Divide-and-Conquer Algorithm)**管理线程池，这种方案在进程阻塞的情况下会导致事倍功半的效果，相比串行方案还会浪费一些计算资源。
+
+具体可参见这篇文章：[深入浅出parallelStream](http://www.jianshu.com/p/bd825cb89e00)
 
 # [Date-Time Package](http://docs.oracle.com/javase/8/docs/technotes/guides/datetime/index.html) 
 
@@ -396,8 +408,8 @@ Nashorn 一个 javascript 引擎。
 > * <http://colobu.com/2014/10/28/secrets-of-java-8-functional-interface/>
 > * <http://blog.csdn.net/zxhoo/article/details/38349011>
 > * <http://ebnbin.com/2015/12/20/java-8-default-methods/>
-> * <https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/>
 > * <https://nkcoder.github.io/2016/01/24/java-8-stream-api/>
 > * http://www.jianshu.com/p/5b800057f2d8
 > * <http://www.importnew.com/14140.html>
 > * <http://brianway.github.io/2017/03/29/javase-java8/>
+
