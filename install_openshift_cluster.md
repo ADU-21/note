@@ -16,8 +16,6 @@
 登录到 bastion 上，
 
 ```
-yum install subscription-manager -y 
-
 yum -y install atomic-openshift-utils ansible openshift-ansible-playbooks
 rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 yum -y install python2-boto \
@@ -40,7 +38,7 @@ git clone https://github.com/openshift/openshift-ansible.git /usr/share/ansible/
 vi ~/.ssh/config
 Host *.oc-tw.net 
      ProxyCommand               ssh ec2-user@bastion -W %h:%p
-     IdentityFile               /home/root/.ssh/oc_yidong
+     IdentityFile               /root/.ssh/yidong_ohio_openshift.pem
 
 Host bastion
      Hostname                   bastion.oc-tw.net
@@ -49,7 +47,7 @@ Host bastion
      ProxyCommand               none
      CheckHostIP                no
      ForwardAgent               yes
-     IdentityFile               /path/to/ssh/key
+     IdentityFile               /root/.ssh/yidong_ohio_openshift.pem
      
      
      
@@ -60,21 +58,95 @@ export AWS_SECRET_ACCESS_KEY=bar
 
 ### 设置 Github OAuth
 
+```
+git clone https://github.com/ADU-21/openshift-ansible-contrib.git
+```
+
+安装Ansible 监控
+
+```
+pip install ara
+export ANSIBLE_CALLBACK_PLUGINS="$(python -c 'import os,ara; print(os.path.dirname(ara.__file__))')/plugins/callbacks"
+ara-manage runserver -h 0.0.0.0 &
+```
+
+```
+pip install --upgrade pip && pip uninstall Pygments && pip install Pygments
+```
+
+
+
+
+
+坑
+
+```
+sudo yum-config-manager --enable rhui-REGION-rhel-server-extras
+sudo yum install -y httpd-tools
+rpm -Uvh ftp://rpmfind.net/linux/centos/7.4.1708/extras/x86_64/Packages/python-passlib-1.6.5-2.el7.noarch.rpm
+```
+
 最后一步
 
 ```
-./ose-on-aws.py --keypair=yidong_sydney --public-hosted-zone=oc-tw.net --deployment-type=origin --ami=ami-fedafc9d \
---github-client-secret=4189c40dfa0a311881fcd808f0cfeb51bc9e6939 
---github-organization=openshift \
---github-organization=ThoughtWorks-Chengdu-DevOps-Club --github-client-id=84dd0bf53dbfc4759baa --region ap-southeast-2
+./ose-on-aws.py \
+--keypair=yidong_ohio_openshift \
+--public-hosted-zone=oc-tw.net \
+--deployment-type=origin \
+--ami=ami-cfdafaaa \
+--github-client-secret=4189c40dfa0a311881fcd808f0cfeb51bc9e6939 \
+--github-organization=ThoughtWorks-Chengdu-DevOps-Club \
+--github-client-id=84dd0bf53dbfc4759baa \
+--region=us-east-2
 ```
 
+安装Docker:
+
 ```
-sudo sed -i.bak -e '/Defaults.*requiretty/s/^/#/' /etc/sudoers
+all_hosts="master01 master02 master03 app-node01 app-node02 infra-node01 infra-node02 infra-node03"
+for h in $all_hosts; do ssh ec2-user@ose-$h.oc-tw.net 'sudo yum-config-manager --enable rhui-REGION-rhel-server-extras -y'; done
 ```
 
-sudo mkdir -p  /etc/rhsm/ca && sudo touch /etc/rhsm/ca/redhat-uep.pem
+
+
+https://openshift-master.oc-tw.net/console/
+
+https://registry-console-default.apps.oc-tw.net/
 
 
 
-rpm -Uvh ftp://rpmfind.net/linux/centos/7.4.1708/extras/x86_64/Packages/python-passlib-1.6.5-2.el7.noarch.rpm
+https://openshift-master.oc-tw.net/console/command-line
+
+oc login https://openshift-master.oc-tw.net --token=bcD3sprC9hjOgopov9VfbHEaBbPK03WQt23MXm-KtGw
+
+oc new-app centos/ruby-22-centos7~https://github.com/openshift/ruby-ex.git
+
+
+
+
+
+
+
+
+
+
+
+
+
+guanging:
+
+```
+./ose-on-aws.py --region=us-east-2 --keypair=lgm-oc --public-hosted-zone=oc-tw.net --deployment-type=origin --ami=ami-cfdafaaa \
+--github-client-secret=6497d7521551c5e98a834c47b1f073e255fafb81 --github-organization=ThoughtWorksInc \
+--github-client-id=0997d0f5c18fd096d5f5
+
+./add-node.py --region=us-east-2 --keypair=lgm-oc --public-hosted-zone=oc-tw.net --deployment-type=origin --ami=ami-cfdafaaa \
+--use-cloudformation-facts --subnet-id=subnet-1139825c \
+--node-type=app --shortname=ose-app-node03 --existing-stack=openshift-infra
+
+ansible-playbook -i inventory/aws/hosts \
+    -e 'region=us-east-2 stack_name=openshift-infra ci=true' \
+    -e 'extra_app_nodes=openshift-infra-ose-app-node03' \
+    playbooks/teardown.yaml
+```
+
